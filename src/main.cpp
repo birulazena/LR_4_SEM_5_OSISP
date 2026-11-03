@@ -19,7 +19,7 @@ int invariant_violations = 0;
 std::vector<DWORD> wait_times;
 
 void LogEvent(int id, const std::string& state) {
-    if (quiet_mode) return; 
+    if (quiet_mode) return; // Тихий режим отключает только этот флуд
     WaitForSingleObject(log_mutex, INFINITE);
     DWORD current_time = GetTickCount() - start_time;
     printf("[%06lu ms] WORKER %d | TID=%lu | STATE=%s\n", current_time, id, GetCurrentThreadId(), state.c_str());
@@ -39,12 +39,12 @@ DWORD WINAPI Philosopher(LPVOID param) {
         Sleep(think_time_ms);
         
         LogEvent(id, "WAITING");
-        DWORD wait_start = GetTickCount(); 
+        DWORD wait_start = GetTickCount();
         
         WaitForSingleObject(forks[first_fork], INFINITE);
         WaitForSingleObject(forks[second_fork], INFINITE);
         
-        wait_times[id] += (GetTickCount() - wait_start); 
+        wait_times[id] += (GetTickCount() - wait_start);
         
         if (fork_owners[first_fork] != -1 || fork_owners[second_fork] != -1) {
             InterlockedIncrement((LONG*)&invariant_violations);
@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
     
     forks.resize(num_philosophers);
     fork_owners.resize(num_philosophers, -1);
-    wait_times.resize(num_philosophers, 0); 
+    wait_times.resize(num_philosophers, 0);
     
     log_mutex = CreateMutex(NULL, FALSE, NULL);
     for (int i = 0; i < num_philosophers; ++i) forks[i] = CreateMutex(NULL, FALSE, NULL);
@@ -97,11 +97,9 @@ int main(int argc, char* argv[]) {
     for (DWORD w : wait_times) total_wait += w;
     DWORD avg_wait = total_wait / num_philosophers;
     
-    if (!quiet_mode) {
-        printf("\nSimulation finished. Violations: %d\n", invariant_violations);
-        printf("Total execution time: %lu ms\n", total_time);
-        printf("Average wait time: %lu ms\n", avg_wait);
-    }
+    printf("\nSimulation finished. Violations: %d\n", invariant_violations);
+    printf("Total execution time: %lu ms\n", total_time);
+    printf("Average wait time: %lu ms\n", avg_wait);
     
     std::ofstream csv_file("data/results.csv", std::ios::app);
     if (csv_file.is_open()) {
