@@ -3,7 +3,7 @@ import sys
 
 TEST_RUNS = 5
 
-COMMAND = ["main.exe", "15", "500", "0", "0", "1"] 
+COMMAND = ["main.exe", "15", "500", "0", "0", "1000", "1"]
 
 print("Запуск автоматических тестов...")
 success = True
