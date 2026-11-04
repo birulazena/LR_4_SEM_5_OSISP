@@ -1,43 +1,31 @@
-import csv
-import matplotlib.pyplot as plt
-import os
+import subprocess
+import sys
 
-data = []
-try:
-    with open('data/results.csv', 'r') as file:
-        reader = csv.reader(file)
-        for row in reader:
-            data.append([int(x) for x in row])
-except FileNotFoundError:
-    print("Файл data/results.csv не найден. Сначала запустите C++ программу.")
-    exit()
+TEST_RUNS = 5
+COMMAND = ["main.exe", "15", "500", "0", "0", "1000", "1"] 
 
-configs = {}
-for row in data:
-    key = f"{row[0]} фил., {row[2]} мс"
-    if key not in configs:
-        configs[key] = {'total_time': [], 'wait_time': []}
-    configs[key]['total_time'].append(row[4])
-    configs[key]['wait_time'].append(row[5])
+print("Запуск автоматических тестов...")
+success = True
 
-labels = list(configs.keys())
-avg_total = [sum(configs[k]['total_time'])/len(configs[k]['total_time']) for k in labels]
-avg_wait = [sum(configs[k]['wait_time'])/len(configs[k]['wait_time']) for k in labels]
+for i in range(1, TEST_RUNS + 1):
+    print(f"Тест {i}/{TEST_RUNS}... ", end="")
+    try:
+        result = subprocess.run(COMMAND, capture_output=True, text=True)
+        if "Violations: 0" in result.stdout:
+            print("УСПЕШНО")
+        else:
+            print("ОШИБКА!")
+            print("Вывод программы:\n", result.stdout)
+            success = False
+            break
+    except FileNotFoundError:
+        print("ОШИБКА: Файл main.exe не найден!")
+        success = False
+        break
 
-plt.figure(figsize=(10, 5))
-plt.bar(labels, avg_total, color='skyblue')
-plt.title('Зависимость времени выполнения от параметров модели')
-plt.ylabel('Время выполнения (мс)')
-plt.xlabel('Конфигурация (Кол-во философов, Время размышления)')
-plt.grid(axis='y', linestyle='--')
-plt.savefig('diagrams/total_time.png')
-
-plt.figure(figsize=(10, 5))
-plt.bar(labels, avg_wait, color='salmon')
-plt.title('Зависимость времени ожидания ресурса от параметров')
-plt.ylabel('Среднее время ожидания (мс)')
-plt.xlabel('Конфигурация (Кол-во философов, Время размышления)')
-plt.grid(axis='y', linestyle='--')
-plt.savefig('diagrams/wait_time.png')
-
-print("Графики успешно сохранены в папку diagrams/")
+if success:
+    print("\nВсе тесты пройдены! Инварианты соблюдаются.")
+    sys.exit(0)
+else:
+    print("\nТесты провалены.")
+    sys.exit(1)
